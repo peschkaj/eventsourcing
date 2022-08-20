@@ -32,7 +32,7 @@ func (ar *AggregateRoot) TrackChange(a Aggregate, data interface{}) {
 
 // TrackChangeWithMetadata is used internally by behaviour methods to apply a state change to
 // the current instance and also track it in order that it can be persisted later.
-// meta data is handled by this func to store none related application state
+// metadata is handled by this func to store none related application state
 func (ar *AggregateRoot) TrackChangeWithMetadata(a Aggregate, data interface{}, metadata map[string]interface{}) {
 	// This can be overwritten in the constructor of the aggregate
 	if ar.aggregateID == emptyAggregateID {
