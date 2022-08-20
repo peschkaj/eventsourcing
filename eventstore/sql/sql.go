@@ -48,7 +48,7 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 
 	var currentVersion eventsourcing.Version
 	var version int
-	selectStm := `SELECT version FROM events WHERE id=? AND type=? ORDER BY version DESC LIMIT 1`
+	selectStm := `SELECT version FROM events WHERE aggregate_id=? AND type=? ORDER BY version DESC LIMIT 1`
 	err = tx.QueryRow(selectStm, aggregateID, aggregateType).Scan(&version)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -67,7 +67,7 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 	}
 
 	var lastInsertedID int64
-	insert := `INSERT INTO events (id, version, reason, type, timestamp, data, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	insert := `INSERT INTO events (aggregate_id, version, reason, type, timestamp, data, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	for i, event := range events {
 		var e, m []byte
 
@@ -97,7 +97,7 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 
 // Get the events from database
 func (s *SQL) Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
-	selectStm := `SELECT seq, id, version, reason, type, timestamp, data, metadata FROM events WHERE id = ? AND type = ? AND version > ? ORDER BY version ASC`
+	selectStm := `SELECT seq, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE aggregate_id = ? AND type = ? AND version > ? ORDER BY version ASC`
 	rows, err := s.db.QueryContext(ctx, selectStm, id, aggregateType, afterVersion)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (s *SQL) Get(ctx context.Context, id uuid.UUID, aggregateType string, after
 
 // GlobalEvents return count events in order globaly from the start posistion
 func (s *SQL) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error) {
-	selectStm := `SELECT seq, id, version, reason, type, timestamp, data, metadata FROM events WHERE seq >= ? ORDER BY seq ASC LIMIT ?`
+	selectStm := `SELECT seq, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE seq >= ? ORDER BY seq ASC LIMIT ?`
 	rows, err := s.db.Query(selectStm, start, count)
 	if err != nil {
 		return nil, err

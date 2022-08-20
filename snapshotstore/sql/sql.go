@@ -36,7 +36,7 @@ func (s *SQL) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.
 	}
 	defer tx.Rollback()
 
-	statement := `SELECT state, version, global_version FROM snapshots WHERE id=$1 AND type=$2 LIMIT 1`
+	statement := `SELECT state, version, global_version FROM snapshots WHERE aggregate_id=$1 AND type=$2 LIMIT 1`
 	var state []byte
 	var version uint64
 	var globalVersion uint64
