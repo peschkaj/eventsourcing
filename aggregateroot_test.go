@@ -9,8 +9,8 @@ import (
 	"github.com/hallgren/eventsourcing"
 )
 
-var emptyBytes []byte = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-var emptyAggregateID uuid.UUID = uuid.FromBytesOrNil(emptyBytes)
+var emptyBytes []byte = make([]byte, 16)
+var emptyAggregateID uuid.UUID = uuid.Nil
 
 // Person aggregate
 type Person struct {

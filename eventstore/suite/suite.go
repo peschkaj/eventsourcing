@@ -17,13 +17,7 @@ import (
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func AggregateID() uuid.UUID {
-	id, err := uuid.NewV7(uuid.MillisecondPrecision)
-
-	if err != nil {
-		return uuid.Nil
-	}
-
-	return id
+	return eventsourcing.NewUuid()
 }
 
 type eventstoreFunc = func(ser eventsourcing.Serializer) (eventsourcing.EventStore, func(), error)

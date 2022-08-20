@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/gofrs/uuid"
 	memory2 "github.com/hallgren/eventsourcing/eventstore/memory"
 
 	"github.com/hallgren/eventsourcing"
@@ -103,16 +102,12 @@ func TestSnapshot(t *testing.T) {
 	// use repo to reset events on person to be able to save snapshot
 	repo := eventsourcing.NewRepository(memory2.Create(), s)
 
-	id, err := uuid.NewV7(uuid.MillisecondPrecision)
-
-	if err != nil {
-		t.Fatal("unable to generate UUID")
-	}
+	id := eventsourcing.NewUuid()
 
 	person, _ := CreatePersonWithID(id, "kalle")
 	repo.Save(person)
 
-	err = s.Save(person)
+	err := s.Save(person)
 	if err != nil {
 		t.Fatal(err)
 	}

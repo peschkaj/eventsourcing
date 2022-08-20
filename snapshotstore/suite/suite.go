@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -38,7 +37,7 @@ func Test(t *testing.T, provider storeProvider) {
 }
 
 func TestSnapshot(t *testing.T, snapshot eventsourcing.SnapshotStore) {
-	id, _ := uuid.NewV7(uuid.MillisecondPrecision)
+	id := eventsourcing.NewUuid()
 	snap := eventsourcing.Snapshot{
 		Version:       10,
 		GlobalVersion: 5,

@@ -71,16 +71,15 @@ func TestSubAggregateID(t *testing.T) {
 	// setup aggregates with identifiers
 
 	anAggregate := AnAggregate{}
-
-	idOne, err := uuid.NewV7(uuid.MillisecondPrecision)
-	if err != nil {
+	idOne := eventsourcing.NewUuid()
+	if idOne == uuid.Nil {
 		t.Fatal("unable to generate UUID")
 	}
 	anAggregate.SetID(idOne)
 
 	anOtherAggregate := AnotherAggregate{}
-	idTwo, err := uuid.NewV7(uuid.MillisecondPrecision)
-	if err != nil {
+	idTwo := eventsourcing.NewUuid()
+	if idTwo == uuid.Nil {
 		t.Fatal("unable to generate UUID")
 	}
 	anOtherAggregate.SetID(idTwo)

@@ -19,7 +19,7 @@ type AggregateRoot struct {
 	aggregateEvents        []Event
 }
 
-var emptyAggregateID uuid.UUID = uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var emptyAggregateID uuid.UUID = uuid.Nil
 
 // ErrAggregateAlreadyExists returned if the aggregateID is set more than one time
 var ErrAggregateAlreadyExists = errors.New("its not possible to set ID on already existing aggregate")
