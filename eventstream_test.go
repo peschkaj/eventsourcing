@@ -354,7 +354,6 @@ func TestName(t *testing.T) {
 	}
 
 	streamEvent = eventsourcing.Event{}
-	e.Publish(AnotherAggregate{}.AggregateRoot, []eventsourcing.Event{otherEvent})
 	if streamEvent.Version != 0 {
 		t.Fatalf("expected zero value")
 	}
