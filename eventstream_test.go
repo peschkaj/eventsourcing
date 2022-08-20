@@ -4,6 +4,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -70,9 +71,19 @@ func TestSubAggregateID(t *testing.T) {
 	// setup aggregates with identifiers
 
 	anAggregate := AnAggregate{}
-	anAggregate.SetID("123")
+
+	idOne, err := uuid.NewV7(uuid.MillisecondPrecision)
+	if err != nil {
+		t.Fatal("unable to generate UUID")
+	}
+	anAggregate.SetID(idOne)
+
 	anOtherAggregate := AnotherAggregate{}
-	anOtherAggregate.SetID("456")
+	idTwo, err := uuid.NewV7(uuid.MillisecondPrecision)
+	if err != nil {
+		t.Fatal("unable to generate UUID")
+	}
+	anOtherAggregate.SetID(idTwo)
 
 	var streamEvent *eventsourcing.Event
 	e := eventsourcing.NewEventStream()

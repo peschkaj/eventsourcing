@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -37,10 +38,11 @@ func Test(t *testing.T, provider storeProvider) {
 }
 
 func TestSnapshot(t *testing.T, snapshot eventsourcing.SnapshotStore) {
+	id, _ := uuid.NewV7(uuid.MillisecondPrecision)
 	snap := eventsourcing.Snapshot{
 		Version:       10,
 		GlobalVersion: 5,
-		ID:            "123",
+		ID:            id,
 		Type:          "Person",
 		State:         []byte{},
 	}
@@ -50,7 +52,7 @@ func TestSnapshot(t *testing.T, snapshot eventsourcing.SnapshotStore) {
 		t.Fatal(err)
 	}
 
-	snap2, err := snapshot.Get(context.Background(), "123", "Person")
+	snap2, err := snapshot.Get(context.Background(), id, "Person")
 	if err != nil {
 		t.Fatalf("could not get snapshot %v", err)
 	}

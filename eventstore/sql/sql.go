@@ -3,9 +3,10 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore"
@@ -41,13 +42,13 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		return errors.New(fmt.Sprintf("could not start a write transaction, %v", err))
+		return fmt.Errorf("could not start a write transaction, %v", err)
 	}
 	defer tx.Rollback()
 
 	var currentVersion eventsourcing.Version
 	var version int
-	selectStm := `Select version from events where id=? and type=? order by version desc limit 1`
+	selectStm := `SELECT version FROM events WHERE id=? AND type=? ORDER BY version DESC LIMIT 1`
 	err = tx.QueryRow(selectStm, aggregateID, aggregateType).Scan(&version)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -66,7 +67,7 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 	}
 
 	var lastInsertedID int64
-	insert := `Insert into events (id, version, reason, type, timestamp, data, metadata) values ($1, $2, $3, $4, $5, $6, $7)`
+	insert := `INSERT INTO events (id, version, reason, type, timestamp, data, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	for i, event := range events {
 		var e, m []byte
 
@@ -95,8 +96,8 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 }
 
 // Get the events from database
-func (s *SQL) Get(ctx context.Context, id string, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
-	selectStm := `Select seq, id, version, reason, type, timestamp, data, metadata from events where id=? and type=? and version>? order by version asc`
+func (s *SQL) Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
+	selectStm := `SELECT seq, id, version, reason, type, timestamp, data, metadata FROM events WHERE id = ? AND type = ? AND version > ? ORDER BY version ASC`
 	rows, err := s.db.QueryContext(ctx, selectStm, id, aggregateType, afterVersion)
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func (s *SQL) Get(ctx context.Context, id string, aggregateType string, afterVer
 
 // GlobalEvents return count events in order globaly from the start posistion
 func (s *SQL) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error) {
-	selectStm := `Select seq, id, version, reason, type, timestamp, data, metadata from events where seq >= ? order by seq asc LIMIT ?`
+	selectStm := `SELECT seq, id, version, reason, type, timestamp, data, metadata FROM events WHERE seq >= ? ORDER BY seq ASC LIMIT ?`
 	rows, err := s.db.Query(selectStm, start, count)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,8 @@ func (s *SQL) eventsFromRows(rows *sql.Rows) ([]eventsourcing.Event, error) {
 		var globalVersion eventsourcing.Version
 		var eventMetadata map[string]interface{}
 		var version eventsourcing.Version
-		var id, reason, typ, timestamp string
+		var id uuid.UUID
+		var reason, typ, timestamp string
 		var data, metadata string
 		if err := rows.Scan(&globalVersion, &id, &version, &reason, &typ, &timestamp, &data, &metadata); err != nil {
 			return nil, err

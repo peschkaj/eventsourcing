@@ -6,6 +6,8 @@ import (
 
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore"
+
+	"github.com/gofrs/uuid"
 )
 
 // Memory is a handler for event streaming
@@ -87,7 +89,7 @@ func (e *Memory) Save(events []eventsourcing.Event) error {
 }
 
 // Get aggregate events
-func (e *Memory) Get(ctx context.Context, id string, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
+func (e *Memory) Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
 	var events []eventsourcing.Event
 	// make sure its thread safe
 	e.lock.Lock()
@@ -128,6 +130,6 @@ func (e *Memory) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error
 func (e *Memory) Close() {}
 
 // aggregateKey generate a aggregate key to store events against from aggregateType and aggregateID
-func aggregateKey(aggregateType, aggregateID string) string {
-	return aggregateType + "_" + aggregateID
+func aggregateKey(aggregateType string, aggregateID uuid.UUID) string {
+	return aggregateType + "_" + aggregateID.String()
 }

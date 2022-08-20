@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"reflect"
+
+	"github.com/gofrs/uuid"
 )
 
 // EventIterator is the interface an event store Get needs to return
@@ -15,13 +17,13 @@ type EventIterator interface {
 // EventStore interface expose the methods an event store must uphold
 type EventStore interface {
 	Save(events []Event) error
-	Get(ctx context.Context, id string, aggregateType string, afterVersion Version) (EventIterator, error)
+	Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion Version) (EventIterator, error)
 }
 
 // SnapshotStore interface expose the methods an snapshot store must uphold
 type SnapshotStore interface {
 	Save(s Snapshot) error
-	Get(ctx context.Context, id, typ string) (Snapshot, error)
+	Get(ctx context.Context, id uuid.UUID, typ string) (Snapshot, error)
 }
 
 // Aggregate interface to use the aggregate root specific methods
@@ -93,7 +95,7 @@ func (r *Repository) SaveSnapshot(aggregate Aggregate) error {
 // If there is a snapshot store try fetch a snapshot of the aggregate and fetch event after the
 // version of the aggregate if any
 // The event fetching can be canceled from the outside.
-func (r *Repository) GetWithContext(ctx context.Context, id string, aggregate Aggregate) error {
+func (r *Repository) GetWithContext(ctx context.Context, id uuid.UUID, aggregate Aggregate) error {
 	if reflect.ValueOf(aggregate).Kind() != reflect.Ptr {
 		return errors.New("aggregate needs to be a pointer")
 	}
@@ -144,6 +146,6 @@ DONE:
 // Get fetches the aggregates event and build up the aggregate
 // If there is a snapshot store try fetch a snapshot of the aggregate and fetch event after the
 // version of the aggregate if any
-func (r *Repository) Get(id string, aggregate Aggregate) error {
+func (r *Repository) Get(id uuid.UUID, aggregate Aggregate) error {
 	return r.GetWithContext(context.Background(), id, aggregate)
 }

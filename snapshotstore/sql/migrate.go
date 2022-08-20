@@ -2,13 +2,13 @@ package sql
 
 import "context"
 
-const createTable = `create table snapshots (id VARCHAR NOT NULL, type VARCHAR, version INTEGER, global_version INTEGER, state BLOB);`
+const createTable = `CREATE TABLE snapshots (id UUID NOT NULL, type VARCHAR, version INTEGER, global_version INTEGER, state BLOB);`
 
 // Migrate the database
 func (s *SQL) Migrate() error {
 	sqlStmt := []string{
 		createTable,
-		`create unique index id_type on snapshots (id, type);`,
+		`CREATE UNIQUE INDEX id_type ON snapshots (id, type);`,
 	}
 	return s.migrate(sqlStmt)
 }

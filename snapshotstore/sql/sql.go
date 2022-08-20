@@ -3,9 +3,9 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -27,7 +27,7 @@ func (s *SQL) Close() {
 }
 
 // Get retrieves the persisted snapshot
-func (s *SQL) Get(ctx context.Context, id, typ string) (eventsourcing.Snapshot, error) {
+func (s *SQL) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.Snapshot, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return eventsourcing.Snapshot{}, err
@@ -36,7 +36,7 @@ func (s *SQL) Get(ctx context.Context, id, typ string) (eventsourcing.Snapshot, 
 	}
 	defer tx.Rollback()
 
-	statement := `SELECT state, version, global_version from snapshots where id=$1 AND type=$2 LIMIT 1`
+	statement := `SELECT state, version, global_version FROM snapshots WHERE id=$1 AND type=$2 LIMIT 1`
 	var state []byte
 	var version uint64
 	var globalVersion uint64
@@ -62,11 +62,11 @@ func (s *SQL) Get(ctx context.Context, id, typ string) (eventsourcing.Snapshot, 
 func (s *SQL) Save(snap eventsourcing.Snapshot) error {
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		return errors.New(fmt.Sprintf("could not start a write transaction, %v", err))
+		return fmt.Errorf("could not start a write transaction, %v", err)
 	}
 	defer tx.Rollback()
 
-	statement := `SELECT id from snapshots where id=$1 AND type=$2 LIMIT 1`
+	statement := `SELECT id FROM snapshots WHERE id=$1 AND type=$2 LIMIT 1`
 	var id string
 	err = tx.QueryRow(statement, snap.ID, snap.Type).Scan(&id)
 	if err != nil && err != sql.ErrNoRows {
@@ -81,7 +81,7 @@ func (s *SQL) Save(snap eventsourcing.Snapshot) error {
 		}
 	} else {
 		// update
-		statement = `UPDATE snapshots set state=$1, version=$2, global_version=$3 where id=$4 AND type=$5`
+		statement = `UPDATE snapshots SET state=$1, version=$2, global_version=$3 WHERE id=$4 AND type=$5`
 		_, err = tx.Exec(statement, string(snap.State), snap.Version, snap.GlobalVersion, snap.ID, snap.Type)
 		if err != nil {
 			return err

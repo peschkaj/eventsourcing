@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -20,7 +21,7 @@ func New() *Handler {
 }
 
 // Get returns the deserialize snapshot
-func (h *Handler) Get(ctx context.Context, id, typ string) (eventsourcing.Snapshot, error) {
+func (h *Handler) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.Snapshot, error) {
 	v, ok := h.store[fmt.Sprintf("%s_%s", id, typ)]
 	if !ok {
 		return eventsourcing.Snapshot{}, eventsourcing.ErrSnapshotNotFound

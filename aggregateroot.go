@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 // Version is the event version used in event.Version, event.GlobalVersion and aggregateRoot
@@ -11,15 +13,13 @@ type Version uint64
 
 // AggregateRoot to be included into aggregates
 type AggregateRoot struct {
-	aggregateID            string
+	aggregateID            uuid.UUID
 	aggregateVersion       Version
 	aggregateGlobalVersion Version
 	aggregateEvents        []Event
 }
 
-const (
-	emptyAggregateID = ""
-)
+var emptyAggregateID uuid.UUID = uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 // ErrAggregateAlreadyExists returned if the aggregateID is set more than one time
 var ErrAggregateAlreadyExists = errors.New("its not possible to set ID on already existing aggregate")
@@ -64,7 +64,7 @@ func (ar *AggregateRoot) BuildFromHistory(a Aggregate, events []Event) {
 	}
 }
 
-func (ar *AggregateRoot) setInternals(id string, version, globalVersion Version) {
+func (ar *AggregateRoot) setInternals(id uuid.UUID, version, globalVersion Version) {
 	ar.aggregateID = id
 	ar.aggregateVersion = version
 	ar.aggregateGlobalVersion = globalVersion
@@ -93,7 +93,7 @@ func (ar *AggregateRoot) path() string {
 }
 
 // SetID opens up the possibility to set manual aggregate ID from the outside
-func (ar *AggregateRoot) SetID(id string) error {
+func (ar *AggregateRoot) SetID(id uuid.UUID) error {
 	if ar.aggregateID != emptyAggregateID {
 		return ErrAggregateAlreadyExists
 	}
@@ -102,7 +102,7 @@ func (ar *AggregateRoot) SetID(id string) error {
 }
 
 // ID returns the aggregate ID as a string
-func (ar *AggregateRoot) ID() string {
+func (ar *AggregateRoot) ID() uuid.UUID {
 	return ar.aggregateID
 }
 
