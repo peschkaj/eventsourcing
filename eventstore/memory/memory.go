@@ -75,13 +75,9 @@ func (e *Memory) Save(events []eventsourcing.Event) error {
 		return err
 	}
 
-	for i, event := range events {
-		// set the global version on the event +1 as if the event was already on the eventsInOrder slice
-		event.GlobalVersion = eventsourcing.Version(len(e.eventsInOrder) + 1)
+	for _, event := range events {
 		evBucket = append(evBucket, event)
 		e.eventsInOrder = append(e.eventsInOrder, event)
-		// override the event in the slice exposing the GlobalVersion to the caller
-		events[i].GlobalVersion = event.GlobalVersion
 	}
 
 	e.aggregateEvents[bucketName] = evBucket
@@ -89,13 +85,13 @@ func (e *Memory) Save(events []eventsourcing.Event) error {
 }
 
 // Get aggregate events
-func (e *Memory) Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
+func (e *Memory) Get(ctx context.Context, aggregateId uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
 	var events []eventsourcing.Event
 	// make sure its thread safe
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	for _, e := range e.aggregateEvents[aggregateKey(aggregateType, id)] {
+	for _, e := range e.aggregateEvents[aggregateKey(aggregateType, aggregateId)] {
 		if e.Version > afterVersion {
 			events = append(events, e)
 		}
@@ -107,7 +103,7 @@ func (e *Memory) Get(ctx context.Context, id uuid.UUID, aggregateType string, af
 }
 
 // GlobalEvents will return count events in order globaly from the start posistion
-func (e *Memory) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error) {
+func (e *Memory) GlobalEvents(start uuid.UUID, count uint64) ([]eventsourcing.Event, error) {
 	var events []eventsourcing.Event
 	// make sure its thread safe
 	e.lock.Lock()
@@ -115,7 +111,7 @@ func (e *Memory) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error
 
 	for _, e := range e.eventsInOrder {
 		// find start position and append until counter is 0
-		if uint64(e.GlobalVersion) >= start {
+		if e.EventID.String() >= start.String() {
 			events = append(events, e)
 			count--
 			if count == 0 {

@@ -66,9 +66,8 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 		return err
 	}
 
-	var lastInsertedID int64
-	insert := `INSERT INTO events (aggregate_id, version, reason, type, timestamp, data, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	for i, event := range events {
+	insert := `INSERT INTO events (event_id, aggregate_id, version, reason, type, timestamp, data, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	for _, event := range events {
 		var e, m []byte
 
 		e, err := s.serializer.Marshal(event.Data)
@@ -81,23 +80,17 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 				return err
 			}
 		}
-		res, err := tx.Exec(insert, event.AggregateID, event.Version, event.Reason(), event.AggregateType, event.Timestamp.Format(time.RFC3339), string(e), string(m))
+		_, err = tx.Exec(insert, event.EventID, event.AggregateID, event.Version, event.Reason(), event.AggregateType, event.Timestamp.Format(time.RFC3339), string(e), string(m))
 		if err != nil {
 			return err
 		}
-		lastInsertedID, err = res.LastInsertId()
-		if err != nil {
-			return err
-		}
-		// override the event in the slice exposing the GlobalVersion to the caller
-		events[i].GlobalVersion = eventsourcing.Version(lastInsertedID)
 	}
 	return tx.Commit()
 }
 
 // Get the events from database
 func (s *SQL) Get(ctx context.Context, id uuid.UUID, aggregateType string, afterVersion eventsourcing.Version) (eventsourcing.EventIterator, error) {
-	selectStm := `SELECT seq, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE aggregate_id = ? AND type = ? AND version > ? ORDER BY version ASC`
+	selectStm := `SELECT event_id, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE aggregate_id = ? AND type = ? AND version > ? ORDER BY version ASC`
 	rows, err := s.db.QueryContext(ctx, selectStm, id, aggregateType, afterVersion)
 	if err != nil {
 		return nil, err
@@ -110,7 +103,7 @@ func (s *SQL) Get(ctx context.Context, id uuid.UUID, aggregateType string, after
 
 // GlobalEvents return count events in order globaly from the start posistion
 func (s *SQL) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error) {
-	selectStm := `SELECT seq, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE seq >= ? ORDER BY seq ASC LIMIT ?`
+	selectStm := `SELECT event_id, aggregate_id, version, reason, type, timestamp, data, metadata FROM events WHERE event_id >= ? ORDER BY event_id ASC LIMIT ?`
 	rows, err := s.db.Query(selectStm, start, count)
 	if err != nil {
 		return nil, err
@@ -122,13 +115,12 @@ func (s *SQL) GlobalEvents(start, count uint64) ([]eventsourcing.Event, error) {
 func (s *SQL) eventsFromRows(rows *sql.Rows) ([]eventsourcing.Event, error) {
 	var events []eventsourcing.Event
 	for rows.Next() {
-		var globalVersion eventsourcing.Version
 		var eventMetadata map[string]interface{}
 		var version eventsourcing.Version
-		var id uuid.UUID
+		var eventId, aggregateId uuid.UUID
 		var reason, typ, timestamp string
 		var data, metadata string
-		if err := rows.Scan(&globalVersion, &id, &version, &reason, &typ, &timestamp, &data, &metadata); err != nil {
+		if err := rows.Scan(&eventId, &aggregateId, &version, &reason, &typ, &timestamp, &data, &metadata); err != nil {
 			return nil, err
 		}
 
@@ -156,9 +148,9 @@ func (s *SQL) eventsFromRows(rows *sql.Rows) ([]eventsourcing.Event, error) {
 		}
 
 		events = append(events, eventsourcing.Event{
-			AggregateID:   id,
+			EventID:       eventId,
+			AggregateID:   aggregateId,
 			Version:       version,
-			GlobalVersion: globalVersion,
 			AggregateType: typ,
 			Timestamp:     t,
 			Data:          eventData,
