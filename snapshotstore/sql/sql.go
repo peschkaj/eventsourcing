@@ -27,7 +27,7 @@ func (s *SQL) Close() {
 }
 
 // Get retrieves the persisted snapshot
-func (s *SQL) Get(ctx context.Context, id, typ string) (eventsourcing.Snapshot, error) {
+func (s *SQL) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.Snapshot, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return eventsourcing.Snapshot{}, err

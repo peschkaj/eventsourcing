@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
@@ -17,7 +18,8 @@ func (i *iterator) Next() (eventsourcing.Event, error) {
 	var globalVersion eventsourcing.Version
 	var eventMetadata map[string]interface{}
 	var version eventsourcing.Version
-	var id, reason, typ, timestamp string
+	var id uuid.UUID
+	var reason, typ, timestamp string
 	var data, metadata string
 	if !i.rows.Next() {
 		return eventsourcing.Event{}, eventsourcing.ErrNoMoreEvents

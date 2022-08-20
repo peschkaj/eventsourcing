@@ -10,14 +10,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func AggregateID() string {
-	r := seededRand.Intn(999999999999)
-	return fmt.Sprintf("%d", r)
+func AggregateID() uuid.UUID {
+	id, err := uuid.NewV7(uuid.MillisecondPrecision)
+
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return id
 }
 
 type eventstoreFunc = func(ser eventsourcing.Serializer) (eventsourcing.EventStore, func(), error)
@@ -97,7 +103,7 @@ type FlightTaken struct {
 var aggregateType = "FrequentFlierAccount"
 var timestamp = time.Now()
 
-func testEventsWithID(aggregateID string) []eventsourcing.Event {
+func testEventsWithID(aggregateID uuid.UUID) []eventsourcing.Event {
 	metadata := make(map[string]interface{})
 	metadata["test"] = "hello"
 	history := []eventsourcing.Event{
@@ -111,11 +117,11 @@ func testEventsWithID(aggregateID string) []eventsourcing.Event {
 	return history
 }
 
-func testEvents(aggregateID string) []eventsourcing.Event {
+func testEvents(aggregateID uuid.UUID) []eventsourcing.Event {
 	return testEventsWithID(aggregateID)
 }
 
-func testEventsPartTwo(aggregateID string) []eventsourcing.Event {
+func testEventsPartTwo(aggregateID uuid.UUID) []eventsourcing.Event {
 	history := []eventsourcing.Event{
 		{AggregateID: aggregateID, Version: 7, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}},
 		{AggregateID: aggregateID, Version: 8, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}},
@@ -123,7 +129,7 @@ func testEventsPartTwo(aggregateID string) []eventsourcing.Event {
 	return history
 }
 
-func testEventOtherAggregate(aggregateID string) eventsourcing.Event {
+func testEventOtherAggregate(aggregateID uuid.UUID) eventsourcing.Event {
 	return eventsourcing.Event{AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}
 }
 
@@ -301,11 +307,10 @@ func saveEventsWithEmptyReason(es eventsourcing.EventStore) error {
 func saveAndGetEventsConcurrently(es eventsourcing.EventStore) error {
 	wg := sync.WaitGroup{}
 	var err error
-	aggregateID := AggregateID()
 
 	wg.Add(10)
 	for i := 0; i < 10; i++ {
-		events := testEventsWithID(fmt.Sprintf("%s-%d", aggregateID, i))
+		events := testEventsWithID(AggregateID())
 		go func() {
 			e := es.Save(events)
 			if e != nil {
@@ -321,10 +326,9 @@ func saveAndGetEventsConcurrently(es eventsourcing.EventStore) error {
 	wg.Wait()
 	wg.Add(10)
 	for i := 0; i < 10; i++ {
-		eventID := fmt.Sprintf("%s-%d", aggregateID, i)
 		go func() {
 			defer wg.Done()
-			iterator, e := es.Get(context.Background(), eventID, aggregateType, 0)
+			iterator, e := es.Get(context.Background(), AggregateID(), aggregateType, 0)
 			if e != nil {
 				err = e
 				return
