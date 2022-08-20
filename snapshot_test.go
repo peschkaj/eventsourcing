@@ -129,9 +129,6 @@ func TestSnapshot(t *testing.T) {
 	if p.Version() != person.Version() {
 		t.Fatalf("wrong version %d %d", p.Version(), person.Version())
 	}
-	if p.GlobalVersion() != person.GlobalVersion() {
-		t.Fatalf("wrong global version %d %d", p.GlobalVersion(), person.GlobalVersion())
-	}
 
 	// store the snapshot once more
 	person.Age = 99

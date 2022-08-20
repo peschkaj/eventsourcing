@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore/memory"
-	"time"
 )
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 
 	// Load the saved aggregate
 	copy := FrequentFlierAccountAggregate{}
-	err = repo.Get(string(aggregate.ID()), &copy)
+	err = repo.Get(aggregate.ID(), &copy)
 	if err != nil {
 		panic("Could not get aggregate")
 	}

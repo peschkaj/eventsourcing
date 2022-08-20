@@ -24,11 +24,6 @@ func TestSaveAndGetAggregate(t *testing.T) {
 		t.Fatal("could not save aggregate")
 	}
 
-	// make sure the global version is set to 1
-	if person.GlobalVersion() != 1 {
-		t.Fatalf("global version is: %d expected: 1", person.GlobalVersion())
-	}
-
 	twin := Person{}
 	err = repo.Get(person.ID(), &twin)
 	if err != nil {
