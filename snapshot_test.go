@@ -84,7 +84,7 @@ func TestSnapshotNoneExported(t *testing.T) {
 	repo.Save(snap)
 
 	snap2 := snapshot{}
-	err = repo.Get(snap.ID(), &snap2)
+	_ = repo.Get(snap.ID(), &snap2)
 
 	if snap.unexported != snap2.unexported {
 		t.Fatalf("none exported value differed %s %s", snap.unexported, snap2.unexported)
@@ -128,9 +128,6 @@ func TestSnapshot(t *testing.T) {
 	}
 	if p.Version() != person.Version() {
 		t.Fatalf("wrong version %d %d", p.Version(), person.Version())
-	}
-	if p.GlobalVersion() != person.GlobalVersion() {
-		t.Fatalf("wrong global version %d %d", p.GlobalVersion(), person.GlobalVersion())
 	}
 
 	// store the snapshot once more

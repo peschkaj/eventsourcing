@@ -16,11 +16,10 @@ var ErrUnsavedEvents = errors.New("aggregate holds unsaved events")
 
 // Snapshot holds current state of an aggregate
 type Snapshot struct {
-	ID            uuid.UUID
-	Type          string
-	State         []byte
-	Version       Version
-	GlobalVersion Version
+	ID      uuid.UUID
+	Type    string
+	State   []byte
+	Version Version
 }
 
 // SnapshotAggregate is an Aggregate plus extra methods to help serialize into a snapshot
@@ -69,11 +68,10 @@ func (s *SnapshotHandler) saveSnapshotAggregate(sa SnapshotAggregate) error {
 		return err
 	}
 	snap := Snapshot{
-		ID:            root.ID(),
-		Type:          typ,
-		Version:       root.Version(),
-		GlobalVersion: root.GlobalVersion(),
-		State:         b,
+		ID:      root.ID(),
+		Type:    typ,
+		Version: root.Version(),
+		State:   b,
 	}
 	return s.snapshotStore.Save(snap)
 }
@@ -90,11 +88,10 @@ func (s *SnapshotHandler) saveAggregate(sa Aggregate) error {
 		return err
 	}
 	snap := Snapshot{
-		ID:            root.ID(),
-		Type:          typ,
-		Version:       root.Version(),
-		GlobalVersion: root.GlobalVersion(),
-		State:         b,
+		ID:      root.ID(),
+		Type:    typ,
+		Version: root.Version(),
+		State:   b,
 	}
 	return s.snapshotStore.Save(snap)
 }
@@ -113,14 +110,14 @@ func (s *SnapshotHandler) Get(ctx context.Context, id uuid.UUID, i interface{}) 
 			return err
 		}
 		root := a.Root()
-		root.setInternals(snap.ID, snap.Version, snap.GlobalVersion)
+		root.setInternals(snap.ID, snap.Version)
 	case Aggregate:
 		err = s.serializer.Unmarshal(snap.State, a)
 		if err != nil {
 			return err
 		}
 		root := a.Root()
-		root.setInternals(snap.ID, snap.Version, snap.GlobalVersion)
+		root.setInternals(snap.ID, snap.Version)
 	default:
 		return errors.New("not an aggregate")
 	}

@@ -92,11 +92,9 @@ The internal `Event` looks like this.
 ```go
 type Event struct {
     // aggregate identifier 
-    AggregateID string
+    AggregateID     uuid.UUID
     // the aggregate version when this event was created
     Version         Version
-    // the global version is based on all events (this value is only set after the event is saved to the event store) 
-    GlobalVersion   Version
     // aggregate type (Person in the example above)
     AggregateType   string
     // UTC time when the event was created  

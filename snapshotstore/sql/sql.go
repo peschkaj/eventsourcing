@@ -39,8 +39,7 @@ func (s *SQL) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.
 	statement := `SELECT state, version, global_version FROM snapshots WHERE aggregate_id=$1 AND type=$2 LIMIT 1`
 	var state []byte
 	var version uint64
-	var globalVersion uint64
-	err = tx.QueryRowContext(ctx, statement, id, typ).Scan(&state, &version, &globalVersion)
+	err = tx.QueryRowContext(ctx, statement, id, typ).Scan(&state, &version)
 	if err != nil && err != sql.ErrNoRows {
 		return eventsourcing.Snapshot{}, err
 	} else if err == sql.ErrNoRows {
@@ -49,11 +48,10 @@ func (s *SQL) Get(ctx context.Context, id uuid.UUID, typ string) (eventsourcing.
 		return eventsourcing.Snapshot{}, ctx.Err()
 	}
 	snap := eventsourcing.Snapshot{
-		ID:            id,
-		Type:          typ,
-		State:         state,
-		Version:       eventsourcing.Version(version),
-		GlobalVersion: eventsourcing.Version(globalVersion),
+		ID:      id,
+		Type:    typ,
+		State:   state,
+		Version: eventsourcing.Version(version),
 	}
 	return snap, nil
 }
@@ -74,15 +72,15 @@ func (s *SQL) Save(snap eventsourcing.Snapshot) error {
 	}
 	if err == sql.ErrNoRows {
 		// insert
-		statement = `INSERT INTO snapshots (state, id, type, version, global_version) VALUES ($1, $2, $3, $4, $5)`
-		_, err = tx.Exec(statement, string(snap.State), snap.ID, snap.Type, snap.Version, snap.GlobalVersion)
+		statement = `INSERT INTO snapshots (state, id, type, version) VALUES ($1, $2, $3, $4)`
+		_, err = tx.Exec(statement, string(snap.State), snap.ID, snap.Type, snap.Version)
 		if err != nil {
 			return err
 		}
 	} else {
 		// update
-		statement = `UPDATE snapshots SET state=$1, version=$2, global_version=$3 WHERE id=$4 AND type=$5`
-		_, err = tx.Exec(statement, string(snap.State), snap.Version, snap.GlobalVersion, snap.ID, snap.Type)
+		statement = `UPDATE snapshots SET state=$1, version=$2 WHERE id=$3 AND type=$4`
+		_, err = tx.Exec(statement, string(snap.State), snap.Version, snap.ID, snap.Type)
 		if err != nil {
 			return err
 		}

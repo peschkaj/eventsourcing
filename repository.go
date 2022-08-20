@@ -70,7 +70,6 @@ func (r *Repository) Subscribers() EventSubscribers {
 // Save an aggregates events
 func (r *Repository) Save(aggregate Aggregate) error {
 	root := aggregate.Root()
-	// use under laying event slice to set GlobalVersion
 	err := r.eventStore.Save(root.aggregateEvents)
 	if err != nil {
 		return err

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -13,8 +12,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func AggregateID() uuid.UUID {
 	return eventsourcing.NewUuid()
@@ -40,7 +37,7 @@ func Test(t *testing.T, esFunc eventstoreFunc) {
 	}
 	ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
 
-	ser.Register(&FrequentFlierAccount{},
+	_ = ser.Register(&FrequentFlierAccount{},
 		ser.Events(
 			&FrequentFlierAccountCreated{},
 			&FlightTaken{},
@@ -100,13 +97,14 @@ var timestamp = time.Now()
 func testEventsWithID(aggregateID uuid.UUID) []eventsourcing.Event {
 	metadata := make(map[string]interface{})
 	metadata["test"] = "hello"
+
 	history := []eventsourcing.Event{
-		{AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}, Metadata: metadata},
-		{AggregateID: aggregateID, Version: 2, AggregateType: aggregateType, Timestamp: timestamp, Data: &StatusMatched{NewStatus: StatusSilver}, Metadata: metadata},
-		{AggregateID: aggregateID, Version: 3, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 2525, TierPointsAdded: 5}, Metadata: metadata},
-		{AggregateID: aggregateID, Version: 4, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 2512, TierPointsAdded: 5}, Metadata: metadata},
-		{AggregateID: aggregateID, Version: 5, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}, Metadata: metadata},
-		{AggregateID: aggregateID, Version: 6, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, AggregateID: aggregateID, Version: 2, AggregateType: aggregateType, Timestamp: timestamp, Data: &StatusMatched{NewStatus: StatusSilver}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}, AggregateID: aggregateID, Version: 3, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 2525, TierPointsAdded: 5}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}, AggregateID: aggregateID, Version: 4, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 2512, TierPointsAdded: 5}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5}, AggregateID: aggregateID, Version: 5, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}, Metadata: metadata},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6}, AggregateID: aggregateID, Version: 6, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}, Metadata: metadata},
 	}
 	return history
 }
@@ -117,14 +115,14 @@ func testEvents(aggregateID uuid.UUID) []eventsourcing.Event {
 
 func testEventsPartTwo(aggregateID uuid.UUID) []eventsourcing.Event {
 	history := []eventsourcing.Event{
-		{AggregateID: aggregateID, Version: 7, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}},
-		{AggregateID: aggregateID, Version: 8, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1}, AggregateID: aggregateID, Version: 7, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}},
+		{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2}, AggregateID: aggregateID, Version: 8, AggregateType: aggregateType, Timestamp: timestamp, Data: &FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}},
 	}
 	return history
 }
 
 func testEventOtherAggregate(aggregateID uuid.UUID) eventsourcing.Event {
-	return eventsourcing.Event{AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}
+	return eventsourcing.Event{EventID: uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1}, AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}
 }
 
 func saveAndGetEvents(es eventsourcing.EventStore) error {
@@ -374,38 +372,16 @@ func saveReturnGlobalEventOrder(es eventsourcing.EventStore) error {
 	if err != nil {
 		return err
 	}
-	if events[len(events)-1].GlobalVersion == 0 {
-		return fmt.Errorf("expected global event order > 0 on last event got %d", events[len(events)-1].GlobalVersion)
+	if events[len(events)-1].EventID == uuid.Nil {
+		return fmt.Errorf("expected global event order > 0 on last event got %s", events[len(events)-1].EventID.String())
 	}
 	events2 := []eventsourcing.Event{testEventOtherAggregate(aggregateID2)}
 	err = es.Save(events2)
 	if err != nil {
 		return err
 	}
-	if events2[0].GlobalVersion <= events[len(events)-1].GlobalVersion {
-		return fmt.Errorf("expected larger global event order got %d", events2[0].GlobalVersion)
+	if events2[0].EventID.String() <= events[len(events)-1].EventID.String() {
+		return fmt.Errorf("expected larger global event order got %s", events2[0].EventID.String())
 	}
 	return nil
 }
-
-/* re-activate when esdb eventstore have global event order on each stream
-func setGlobalVersionOnSavedEvents(es eventsourcing.EventStore) error {
-	events := testEvents()
-	err := es.Save(events)
-	if err != nil {
-		return err
-	}
-	eventsGet, err := es.Get(events[0].AggregateID, events[0].AggregateType, 0)
-	if err != nil {
-		return err
-	}
-	var g eventsourcing.Version
-	for _, e := range eventsGet {
-		g++
-		if e.GlobalVersion != g {
-			return fmt.Errorf("expected global version to be in sequens exp: %d, was: %d", g, e.GlobalVersion)
-		}
-	}
-	return nil
-}
-*/

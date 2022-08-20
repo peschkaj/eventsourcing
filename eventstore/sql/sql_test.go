@@ -2,7 +2,6 @@ package sql_test
 
 import (
 	sqldriver "database/sql"
-	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -22,17 +21,17 @@ func TestSuite(t *testing.T) {
 		r := seededRand.Intn(999999999999)
 		db, err := sqldriver.Open("ramsql", fmt.Sprintf("%d", r))
 		if err != nil {
-			return nil, nil, errors.New(fmt.Sprintf("could not open ramsql database %v", err))
+			return nil, nil, fmt.Errorf("could not open ramsql database %v", err)
 		}
 		err = db.Ping()
 		if err != nil {
-			return nil, nil, errors.New(fmt.Sprintf("could not ping database %v", err))
+			return nil, nil, fmt.Errorf("could not ping database %v", err)
 		}
 
 		es := sql.Open(db, ser)
 		err = es.MigrateTest()
 		if err != nil {
-			return nil, nil, errors.New(fmt.Sprintf("could not migrate database %v", err))
+			return nil, nil, fmt.Errorf("could not migrate database %v", err)
 		}
 		return es, func() {
 			es.Close()

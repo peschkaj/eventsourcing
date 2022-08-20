@@ -106,10 +106,6 @@ func TestCreateNewPerson(t *testing.T) {
 	if person.Events()[0].Timestamp.After(time.Now().UTC()) {
 		t.Fatal("event timestamp after current time")
 	}
-
-	if person.Events()[0].GlobalVersion != 0 {
-		t.Fatalf("global version should not be set when event is created, was %d", person.Events()[0].GlobalVersion)
-	}
 }
 
 func TestCreateNewPersonWithIDFromOutside(t *testing.T) {
@@ -162,6 +158,17 @@ func TestPersonAgedOneYear(t *testing.T) {
 	}
 
 	d, ok := person.Events()[1].Metadata["foo"]
+
+	first := person.Events()[0].EventID.String()
+	second := person.Events()[1].EventID.String()
+
+	if first >= second {
+		t.Fatal("event IDs must sort correctly")
+	}
+
+	if first == second {
+		t.Fatal("event IDs must not be reused")
+	}
 
 	if !ok {
 		t.Fatal("meta data not present")

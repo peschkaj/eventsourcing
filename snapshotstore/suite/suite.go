@@ -39,11 +39,10 @@ func Test(t *testing.T, provider storeProvider) {
 func TestSnapshot(t *testing.T, snapshot eventsourcing.SnapshotStore) {
 	id := eventsourcing.NewUuid()
 	snap := eventsourcing.Snapshot{
-		Version:       10,
-		GlobalVersion: 5,
-		ID:            id,
-		Type:          "Person",
-		State:         []byte{},
+		Version: 10,
+		ID:      id,
+		Type:    "Person",
+		State:   []byte{},
 	}
 
 	err := snapshot.Save(snap)
@@ -60,9 +59,6 @@ func TestSnapshot(t *testing.T, snapshot eventsourcing.SnapshotStore) {
 	}
 	if snap.Type != snap2.Type {
 		t.Fatalf("wrong Type in snapshot %q expected: %q", snap.Type, snap2.Type)
-	}
-	if snap.GlobalVersion != snap2.GlobalVersion {
-		t.Fatalf("wrong GlobalVersion in snapshot %q expected: %q", snap.GlobalVersion, snap2.GlobalVersion)
 	}
 	if snap.Version != snap2.Version {
 		t.Fatalf("wrong Version in snapshot %q expected: %q", snap.Version, snap2.Version)

@@ -15,16 +15,15 @@ type iterator struct {
 
 // Next return the next event
 func (i *iterator) Next() (eventsourcing.Event, error) {
-	var globalVersion eventsourcing.Version
 	var eventMetadata map[string]interface{}
 	var version eventsourcing.Version
-	var id uuid.UUID
+	var eventId, aggregateId uuid.UUID
 	var reason, typ, timestamp string
 	var data, metadata string
 	if !i.rows.Next() {
 		return eventsourcing.Event{}, eventsourcing.ErrNoMoreEvents
 	}
-	if err := i.rows.Scan(&globalVersion, &id, &version, &reason, &typ, &timestamp, &data, &metadata); err != nil {
+	if err := i.rows.Scan(&eventId, &aggregateId, &version, &reason, &typ, &timestamp, &data, &metadata); err != nil {
 		return eventsourcing.Event{}, err
 	}
 
@@ -52,9 +51,9 @@ func (i *iterator) Next() (eventsourcing.Event, error) {
 	}
 
 	event := eventsourcing.Event{
-		AggregateID:   id,
+		EventID:       eventId,
+		AggregateID:   aggregateId,
 		Version:       version,
-		GlobalVersion: globalVersion,
 		AggregateType: typ,
 		Timestamp:     t,
 		Data:          eventData,

@@ -15,11 +15,11 @@ var ErrNoEvents = errors.New("no events")
 // ErrNoMoreEvents when iterator has no more events to deliver
 var ErrNoMoreEvents = errors.New("no more events")
 
-// Event holding meta data and the application specific event in the Data property
+// Event holding metadata and the application specific event in the Data property
 type Event struct {
+	EventID       uuid.UUID
 	AggregateID   uuid.UUID
 	Version       Version
-	GlobalVersion Version
 	AggregateType string
 	Timestamp     time.Time
 	Data          interface{}
