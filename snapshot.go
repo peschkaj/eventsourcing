@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"reflect"
+
+	"github.com/gofrs/uuid"
 )
 
 // ErrEmptyID indicates that the aggregate ID was empty
@@ -14,7 +16,7 @@ var ErrUnsavedEvents = errors.New("aggregate holds unsaved events")
 
 // Snapshot holds current state of an aggregate
 type Snapshot struct {
-	ID            string
+	ID            uuid.UUID
 	Type          string
 	State         []byte
 	Version       Version
@@ -98,7 +100,7 @@ func (s *SnapshotHandler) saveAggregate(sa Aggregate) error {
 }
 
 // Get fetch a snapshot and reconstruct an aggregate
-func (s *SnapshotHandler) Get(ctx context.Context, id string, i interface{}) error {
+func (s *SnapshotHandler) Get(ctx context.Context, id uuid.UUID, i interface{}) error {
 	typ := reflect.TypeOf(i).Elem().Name()
 	snap, err := s.snapshotStore.Get(ctx, id, typ)
 	if err != nil {
@@ -127,7 +129,7 @@ func (s *SnapshotHandler) Get(ctx context.Context, id string, i interface{}) err
 
 // validate make sure the aggregate is valid to be saved
 func validate(root AggregateRoot) error {
-	if root.ID() == "" {
+	if root.ID() == emptyAggregateID {
 		return ErrEmptyID
 	}
 	if root.UnsavedEvents() {

@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	memory2 "github.com/hallgren/eventsourcing/eventstore/memory"
 
 	"github.com/hallgren/eventsourcing"
@@ -102,7 +103,13 @@ func TestSnapshot(t *testing.T) {
 	// use repo to reset events on person to be able to save snapshot
 	repo := eventsourcing.NewRepository(memory2.Create(), s)
 
-	person, err := CreatePersonWithID("123", "kalle")
+	id, err := uuid.NewV7(uuid.MillisecondPrecision)
+
+	if err != nil {
+		t.Fatal("unable to generate UUID")
+	}
+
+	person, _ := CreatePersonWithID(id, "kalle")
 	repo.Save(person)
 
 	err = s.Save(person)
@@ -111,7 +118,7 @@ func TestSnapshot(t *testing.T) {
 	}
 
 	p := Person{}
-	err = s.Get(context.Background(), "123", &p)
+	err = s.Get(context.Background(), id, &p)
 	if err != nil {
 		t.Fatalf("could not get person from snapshot %v", err)
 	}
@@ -147,7 +154,7 @@ func TestGetNoneExistingSnapshot(t *testing.T) {
 	ser := eventsourcing.NewSerializer(xml.Marshal, xml.Unmarshal)
 	s := eventsourcing.SnapshotNew(memsnap.New(), *ser)
 	p := Person{}
-	err := s.Get(context.Background(), "noneExistingID", &p)
+	err := s.Get(context.Background(), emptyAggregateID, &p)
 	if err == nil {
 		t.Fatalf("could get none existing snapshot %v", err)
 	}

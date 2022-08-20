@@ -2,12 +2,15 @@ package eventsourcing_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 )
+
+var emptyBytes []byte = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var emptyAggregateID uuid.UUID = uuid.FromBytesOrNil(emptyBytes)
 
 // Person aggregate
 type Person struct {
@@ -32,17 +35,19 @@ func CreatePerson(name string) (*Person, error) {
 		return nil, errors.New("name can't be blank")
 	}
 	person := Person{}
+
 	person.TrackChange(&person, &Born{Name: name})
 	return &person, nil
 }
 
 // CreatePersonWithID constructor for the Person that sets the aggregate ID from the outside
-func CreatePersonWithID(id, name string) (*Person, error) {
+func CreatePersonWithID(id uuid.UUID, name string) (*Person, error) {
 	if name == "" {
 		return nil, errors.New("name can't be blank")
 	}
 
 	person := Person{}
+
 	err := person.SetID(id)
 	if err == eventsourcing.ErrAggregateAlreadyExists {
 		return nil, err
@@ -108,7 +113,7 @@ func TestCreateNewPerson(t *testing.T) {
 }
 
 func TestCreateNewPersonWithIDFromOutside(t *testing.T) {
-	id := "123"
+	id := uuid.UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3}
 	person, err := CreatePersonWithID(id, "kalle")
 	if err != nil {
 		t.Fatal("Error when creating person", err.Error())
@@ -132,7 +137,13 @@ func TestSetIDOnExistingPerson(t *testing.T) {
 		t.Fatal("The constructor returned error")
 	}
 
-	err = person.SetID("new_id")
+	id, err := uuid.NewV7(uuid.MillisecondPrecision)
+
+	if err != nil {
+		t.Fatal("UUID constructor returned error")
+	}
+
+	err = person.SetID(id)
 	if err == nil {
 		t.Fatal("Should not be possible to set ID on already existing person")
 	}
@@ -160,7 +171,7 @@ func TestPersonAgedOneYear(t *testing.T) {
 		t.Fatal("wrong meta data")
 	}
 
-	if person.ID() == "" {
+	if person.ID() == emptyAggregateID {
 		t.Fatal("aggregate ID should not be empty")
 	}
 }
@@ -177,23 +188,36 @@ func TestPersonGrewTenYears(t *testing.T) {
 }
 
 func TestSetIDFunc(t *testing.T) {
-	var counter = 0
-	f := func() string {
+	var counter int64 = 0
+	f := func() uuid.UUID {
 		counter++
-		return fmt.Sprint(counter)
+		bytes := emptyBytes
+		bytes[15] = byte(counter)
+		return uuid.FromBytesOrNil(bytes)
 	}
 
 	eventsourcing.SetIDFunc(f)
 	for i := 1; i < 10; i++ {
 		person, _ := CreatePerson("kalle")
-		if person.ID() != fmt.Sprint(i) {
+
+		bytes := emptyBytes
+		bytes[15] = byte(counter)
+
+		id, err := uuid.FromBytes(bytes)
+		if err != nil {
+			t.Fatalf("unable to convert an integer (%d) into bytes", counter)
+		}
+
+		if person.ID() != id {
 			t.Fatalf("id not set via the new SetIDFunc, exp: %d got: %s", i, person.ID())
 		}
 	}
 }
 
 func TestIDFuncGeneratingRandomIDs(t *testing.T) {
-	var ids = map[string]struct{}{}
+	eventsourcing.SetIDFunc(eventsourcing.NewUuid)
+
+	var ids = map[uuid.UUID]struct{}{}
 	for i := 1; i < 100000; i++ {
 		person, _ := CreatePerson("kalle")
 		_, exists := ids[person.ID()]

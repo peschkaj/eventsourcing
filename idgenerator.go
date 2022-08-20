@@ -1,41 +1,25 @@
 package eventsourcing
 
 import (
-	"crypto/rand"
+	"github.com/gofrs/uuid"
 )
 
-// idFunc is a global function that generates aggregate id's.
+// idFunc is a global function that generates aggregate IDs.
 // It could be changed from the outside via the SetIDFunc function.
-var idFunc = randSeq
+var idFunc = NewUuid
 
-// SetIDFunc is used to change how aggregate ID's are generated
+// SetIDFunc is used to change how aggregate IDs are generated
 // default is a random string
-func SetIDFunc(f func() string) {
+func SetIDFunc(f func() uuid.UUID) {
 	idFunc = f
 }
 
-func randSeq() string {
-	id, err := generateRandomString(20)
+func NewUuid() uuid.UUID {
+	id, err := uuid.NewV7(uuid.MillisecondPrecision)
+
 	if err != nil {
-		return ""
+		return emptyAggregateID
 	}
+
 	return id
-}
-
-func generateRandomString(n int) (string, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	bytes, err := generateRandomBytes(n)
-	if err != nil {
-		return "", err
-	}
-	for i, b := range bytes {
-		bytes[i] = letters[b%byte(len(letters))]
-	}
-	return string(bytes), nil
-}
-
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	return b, err
 }

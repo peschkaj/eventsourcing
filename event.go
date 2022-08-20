@@ -5,6 +5,8 @@ import (
 	"errors"
 	"reflect"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 // ErrNoEvents when there is no events to get
@@ -15,7 +17,7 @@ var ErrNoMoreEvents = errors.New("no more events")
 
 // Event holding meta data and the application specific event in the Data property
 type Event struct {
-	AggregateID   string
+	AggregateID   uuid.UUID
 	Version       Version
 	GlobalVersion Version
 	AggregateType string

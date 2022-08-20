@@ -2,14 +2,14 @@ package sql
 
 import "context"
 
-const createTable = `create table events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id VARCHAR NOT NULL, version INTEGER, reason VARCHAR, type VARCHAR, timestamp VARCHAR, data BLOB, metadata BLOB);`
+const createTable = `CREATE TABLE events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id UUID NOT NULL, version INTEGER, reason VARCHAR, type VARCHAR, timestamp VARCHAR, data BLOB, metadata BLOB);`
 
 // Migrate the database
 func (s *SQL) Migrate() error {
 	sqlStmt := []string{
 		createTable,
-		`create unique index id_type_version on events (id, type, version);`,
-		`create index id_type on events (id, type);`,
+		`CREATE UNIQUE INDEX id_type_version ON events(id, type, version);`,
+		`CREATE INDEX id_type ON events (id, type);`,
 	}
 	return s.migrate(sqlStmt)
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore/memory"
 	memsnap "github.com/hallgren/eventsourcing/snapshotstore/memory"
@@ -102,7 +103,12 @@ func TestGetNoneExistingAggregate(t *testing.T) {
 	repo := eventsourcing.NewRepository(memory.Create(), nil)
 
 	p := Person{}
-	err := repo.Get("none_existing", &p)
+	id, err := uuid.NewV7(uuid.MillisecondPrecision)
+	if err != nil {
+		t.Fatal("unable to generate random UUID")
+	}
+
+	err = repo.Get(id, &p)
 	if err != eventsourcing.ErrAggregateNotFound {
 		t.Fatal("could not get aggregate")
 	}
