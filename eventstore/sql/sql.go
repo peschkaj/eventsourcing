@@ -3,7 +3,6 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -43,7 +42,7 @@ func (s *SQL) Save(events []eventsourcing.Event) error {
 
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		return errors.New(fmt.Sprintf("could not start a write transaction, %v", err))
+		return fmt.Errorf("could not start a write transaction, %v", err)
 	}
 	defer tx.Rollback()
 
