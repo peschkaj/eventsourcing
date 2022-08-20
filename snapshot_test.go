@@ -84,7 +84,7 @@ func TestSnapshotNoneExported(t *testing.T) {
 	repo.Save(snap)
 
 	snap2 := snapshot{}
-	err = repo.Get(snap.ID(), &snap2)
+	_ = repo.Get(snap.ID(), &snap2)
 
 	if snap.unexported != snap2.unexported {
 		t.Fatalf("none exported value differed %s %s", snap.unexported, snap2.unexported)

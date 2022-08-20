@@ -331,6 +331,9 @@ func TestEventChainDoesNotHang(t *testing.T) {
 		eventChan <- e
 	}
 
+	// use a channel to hand off the error
+	errs := make(chan error, 1)
+
 	// for every AgedOnYear create a new person and make it grow one year older
 	go func() {
 		for e := range eventChan {
@@ -338,7 +341,7 @@ func TestEventChainDoesNotHang(t *testing.T) {
 			case *AgedOneYear:
 				person, err := CreatePerson("kalle")
 				if err != nil {
-					t.Fatal(err)
+					errs <- err
 				}
 				person.GrowOlder()
 				repo.Save(person)
@@ -346,6 +349,12 @@ func TestEventChainDoesNotHang(t *testing.T) {
 		}
 		close(doneChan)
 	}()
+
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	// create the initial person and setup event subscription on the specific person events
 	person, err := CreatePerson("kalle")

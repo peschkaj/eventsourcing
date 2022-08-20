@@ -2,6 +2,7 @@ package eventsourcing_test
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"sync"
 	"testing"
@@ -87,6 +88,10 @@ func TestSerializeDeserialize(t *testing.T) {
 func TestConcurrentUnmarshal(t *testing.T) {
 	serializers := initSerializers(t)
 	metaData["foo"] = "bar"
+
+	// use a channel to hand off the error
+	errs := make(chan error, 1)
+
 	for _, s := range serializers {
 		d, err := s.Marshal(data)
 		if err != nil {
@@ -94,12 +99,13 @@ func TestConcurrentUnmarshal(t *testing.T) {
 		}
 		wg := sync.WaitGroup{}
 		wg.Add(10)
+
 		for i := 0; i < 10; i++ {
 			go func(j int) {
 				defer wg.Done()
 				f, ok := s.Type("SomeAggregate", "SomeData")
 				if !ok {
-					t.Fatal("could not find event type registered for SomeAggregate/SomeData")
+					errs <- errors.New("could not find event type registered for SomeAggregate/SomeData")
 				}
 				dataOut := f()
 				err2 := s.Unmarshal(d, &dataOut)
@@ -114,5 +120,11 @@ func TestConcurrentUnmarshal(t *testing.T) {
 			}(i)
 		}
 		wg.Wait()
+	}
+
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
